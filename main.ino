@@ -72,7 +72,7 @@ void sendData()
 
 BLYNK_WRITE(V2)
 {
-    digitalWrite(relay, !param.asInt());
+    digitalWrite(relay, param.asInt());
 }
 
 float getDistanceCm(int trig, int echo)
