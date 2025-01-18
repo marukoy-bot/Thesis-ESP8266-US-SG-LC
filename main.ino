@@ -11,8 +11,8 @@
 #include "MAX30100_PulseOximeter.h"
 
 char auth[] = BLYNK_AUTH_TOKEN;
-char ssid[] = "McDonalds Kiosk";
-char pword[] = "00000000";
+char ssid[] = "IPhone 15 Pro Max 1tb Fully Paid";
+char pword[] = "uslt4527";
 
 //US Sensor 1
 #define trig_1 2
