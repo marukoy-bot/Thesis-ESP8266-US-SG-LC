@@ -13,18 +13,11 @@
 char auth[] = BLYNK_AUTH_TOKEN;
 char ssid[] = "IPhone 15 Pro Max 1tb Fully Paid";
 char pword[] = "uslt4527";
+// char ssid[] = "McDonalds Kiosk";
+// char pword[] = "00000000";
 
-//US Sensor 1
-#define trig_1 2
-#define echo_1 4
-
-//US Sensor 2
-#define trig_2 27
-#define echo_2 14
-
-//US Sensor 3
-#define trig_3 4
-#define echo_3 5
+//LDR
+#define LDR 35
 
 //pump
 #define in1 33
@@ -48,6 +41,13 @@ PulseOximeter pox;
 
 bool connected = false;
 uint32_t tsLastReport = 0;
+unsigned long lastMillis = 0;
+const int interval = 60000;
+int LDRval = 0;
+const int LDRThreshold = 3600;
+int dropletCount = 0;
+unsigned long startTime = 0;
+float dropletsPerMinute = 0;
 
 TaskHandle_t task_1;
 TaskHandle_t task_2;
@@ -57,11 +57,7 @@ void setup()
     Serial.begin(115200);
     WiFi.begin(ssid, pword);
 
-    pinMode(trig_1, OUTPUT);
-    pinMode(echo_1, INPUT);
-    pinMode(trig_2, OUTPUT);
-    pinMode(echo_2, INPUT);
-    pinMode(strain, INPUT);
+    pinMode(LDR, INPUT);
     pinMode(in1, OUTPUT);
     pinMode(in2, OUTPUT);
     pinMode(pwm, OUTPUT);
@@ -76,6 +72,7 @@ void setup()
 
     xTaskCreatePinnedToCore(getVitals, "task_1", 10000, NULL, 0, &task_1, 0);
     delay(500);
+    startTime = millis();
 }
 
 String vitals;
@@ -83,12 +80,12 @@ int value = 0;
 
 void sendData()
 {
-    Blynk.virtualWrite(V0, getDistanceCm(trig_1, echo_1));
-    Blynk.virtualWrite(V1, getDistanceCm(trig_2, echo_2));
+    Blynk.virtualWrite(V0, dropletsPerMinute);
+    //Blynk.virtualWrite(V1, LDRval);
     //Blynk.virtualWrite(V3, getStrainData());
+
     Blynk.virtualWrite(V4, getWeight());
     Blynk.virtualWrite(V5, vitals);
-    Serial.println(getStrainData());
 }
 
 BLYNK_WRITE(V2)
@@ -97,28 +94,6 @@ BLYNK_WRITE(V2)
     digitalWrite(in2, LOW);
     value = map(param.asInt(), 0, 100, 0, 255);
     analogWrite(pwm, value);
-}
-
-float getDistanceCm(int trig, int echo)
-{
-    long duration = 0;
-    float distance = 0;
-    digitalWrite(trig, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trig, LOW);
-
-    duration = pulseIn(echo, HIGH);
-    distance = duration * 0.017;
-    return distance;
-}
-
-String getStrainData()    
-{
-    String strainData;
-    float val = analogRead(strain);
-    float percentage = map(value, 0, 1024, 0, 100);
-    strainData = (String)val + " (" + (String)percentage + "%)";
-    return strainData;
 }
 
 float getWeight()
@@ -137,6 +112,25 @@ void getVitals(void * params)
         {
             vitals = (String)pox.getHeartRate() + " bpm | " + (String)pox.getSpO2() + "%";
             tsLastReport = millis();
+        }
+
+        LDRval = analogRead(LDR);
+        Serial.print(LDRval);
+        if(LDRval < LDRThreshold)
+        {
+            dropletCount++;
+            delay(100);
+        }
+
+        unsigned long elapsedTime = millis() - startTime;
+        dropletsPerMinute = (dropletCount/ (elapsedTime / 60000.0));
+
+        static unsigned long lastPrintTime = 0;
+
+        if(millis() - lastPrintTime >= 1000)
+        {
+            Serial.println(dropletsPerMinute);
+            lastPrintTime = millis();
         }
     }
 }
