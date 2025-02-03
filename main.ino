@@ -115,21 +115,25 @@ void getVitals(void * params)
         }
 
         LDRval = analogRead(LDR);
-        Serial.print(LDRval);
         if(LDRval < LDRThreshold)
         {
+            Serial.print(LDRval);
+            Serial.print(" | ");
             dropletCount++;
+            Serial.println(dropletCount);
             delay(100);
         }
 
-        unsigned long elapsedTime = millis() - startTime;
-        dropletsPerMinute = (dropletCount/ (elapsedTime / 60000.0));
+        // unsigned long elapsedTime = millis() - startTime;
+        // dropletsPerMinute = (dropletCount/ (elapsedTime / 60000.0));
 
         static unsigned long lastPrintTime = 0;
 
-        if(millis() - lastPrintTime >= 1000)
+        if(millis() - lastPrintTime >= 60000)
         {
-            Serial.println(dropletsPerMinute);
+            dropletsPerMinute = dropletCount;
+            dropletCount = 0;
+            //Serial.println(dropletCount);
             lastPrintTime = millis();
         }
     }
