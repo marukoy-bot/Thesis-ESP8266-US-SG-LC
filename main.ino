@@ -11,13 +11,17 @@
 #include "MAX30100_PulseOximeter.h"
 
 char auth[] = BLYNK_AUTH_TOKEN;
-char ssid[] = "IPhone 15 Pro Max 1tb Fully Paid";
-char pword[] = "uslt4527";
+// char ssid[] = "Pa Load Bala";
+// char pword[] = "1234567890";
+// char ssid[] = "IPhone 15 Pro Max 1tb Fully Paid";
+// char pword[] = "uslt4527";
 // char ssid[] = "McDonalds Kiosk";
 // char pword[] = "00000000";
+char ssid[] = "ESP32_Hotspot";
+char pword[] = "12345678";
 
-//LDR
-#define LDR 35
+//Laser Sensor
+#define laserSensor 35
 
 //pump
 #define in1 33
@@ -55,13 +59,19 @@ TaskHandle_t task_2;
 void setup() 
 {
     Serial.begin(115200);
-    WiFi.begin(ssid, pword);
+    WiFi.softAP(ssid, pword);
+    Serial.print("AP IP Address: ");
+    Serial.println(WiFi.softAPIP());
 
     pinMode(LDR, INPUT);
     pinMode(in1, OUTPUT);
     pinMode(in2, OUTPUT);
     pinMode(pwm, OUTPUT);
-    Blynk.begin(auth, ssid, pword, "blynk.cloud", 80);
+
+    Blynk.config(auth);
+    Blynk.begin(auth);
+
+    //Blynk.begin(auth, ssid, pword, "blynk.cloud", 80);
     scale.begin(load_dout, load_sck);
     scale.set_scale(calibration_reading);
     timer.setInterval(1000L, sendData); 
@@ -81,9 +91,6 @@ int value = 0;
 void sendData()
 {
     Blynk.virtualWrite(V0, dropletsPerMinute);
-    //Blynk.virtualWrite(V1, LDRval);
-    //Blynk.virtualWrite(V3, getStrainData());
-
     Blynk.virtualWrite(V4, getWeight());
     Blynk.virtualWrite(V5, vitals);
 }
@@ -114,15 +121,6 @@ void getVitals(void * params)
             tsLastReport = millis();
         }
 
-        LDRval = analogRead(LDR);
-        if(LDRval < LDRThreshold)
-        {
-            Serial.print(LDRval);
-            Serial.print(" | ");
-            dropletCount++;
-            Serial.println(dropletCount);
-            delay(100);
-        }
 
         // unsigned long elapsedTime = millis() - startTime;
         // dropletsPerMinute = (dropletCount/ (elapsedTime / 60000.0));
